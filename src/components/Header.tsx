@@ -1,8 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AddJobDialog } from "@/components/AddJobDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { Briefcase, Plus, LogOut } from "lucide-react";
 
 export const Header = () => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const getUserInitial = () => {
+    return user?.email?.charAt(0).toUpperCase() || 'U';
+  };
   return (
     <header className="bg-gradient-primary text-primary-foreground shadow-elegant">
       <div className="container mx-auto px-6 py-4">
@@ -18,17 +29,21 @@ export const Header = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Button variant="secondary" size="sm" className="shadow-sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Application
-            </Button>
+            <AddJobDialog />
             
             <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="" />
-                <AvatarFallback className="bg-white/20 text-primary-foreground">U</AvatarFallback>
+                <AvatarFallback className="bg-white/20 text-primary-foreground">
+                  {getUserInitial()}
+                </AvatarFallback>
               </Avatar>
-              <Button variant="ghost" size="sm" className="text-primary-foreground hover:bg-white/20">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary-foreground hover:bg-white/20"
+                onClick={handleLogout}
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>

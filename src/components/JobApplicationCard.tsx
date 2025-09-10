@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, Calendar, FileText, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EditJobDialog } from "@/components/EditJobDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface JobApplication {
   id: string;
@@ -18,6 +20,8 @@ interface JobApplication {
 
 interface JobApplicationCardProps {
   application: JobApplication;
+  onUpdate?: (application: JobApplication) => void;
+  onDelete?: (id: string) => void;
 }
 
 const statusColors = {
@@ -27,7 +31,26 @@ const statusColors = {
   offer: "bg-success text-success-foreground"
 };
 
-export const JobApplicationCard = ({ application }: JobApplicationCardProps) => {
+export const JobApplicationCard = ({ application, onUpdate, onDelete }: JobApplicationCardProps) => {
+  const { toast } = useToast();
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(application.id);
+      toast({
+        title: "Application deleted",
+        description: "The job application has been removed.",
+      });
+    }
+  };
+
+  const handleViewResume = () => {
+    toast({
+      title: "Feature coming soon",
+      description: "Resume viewing will be available once backend is connected.",
+    });
+  };
+
   return (
     <Card className="bg-gradient-card shadow-card hover:shadow-hover transition-all duration-300 border-0">
       <CardHeader className="pb-3">
@@ -50,9 +73,11 @@ export const JobApplicationCard = ({ application }: JobApplicationCardProps) => 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem>View Resume</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  {onUpdate && <EditJobDialog application={application} onUpdate={onUpdate} />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleViewResume}>View Resume</DropdownMenuItem>
+                <DropdownMenuItem className="text-destructive" onClick={handleDelete}>Delete</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

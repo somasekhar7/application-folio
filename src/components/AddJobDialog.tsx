@@ -8,17 +8,85 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export const AddJobDialog = () => {
+interface JobApplication {
+  id: string;
+  jobTitle: string;
+  company: string;
+  jobId: string;
+  appliedDate: string;
+  status: "pending" | "interview" | "rejected" | "offer";
+  description: string;
+  additionalInfo?: string;
+  resumeAttached: boolean;
+  cvAttached?: boolean;
+}
+
+interface AddJobDialogProps {
+  onAdd?: (application: Omit<JobApplication, 'id'>) => void;
+}
+
+export const AddJobDialog = ({ onAdd }: AddJobDialogProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   
+  // Form state
+  const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [jobId, setJobId] = useState("");
+  const [appliedDate, setAppliedDate] = useState("");
+  const [status, setStatus] = useState<"pending" | "interview" | "rejected" | "offer">("pending");
+  const [description, setDescription] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newApplication = {
+      jobTitle,
+      company,
+      jobId,
+      appliedDate,
+      status,
+      description,
+      additionalInfo,
+      resumeAttached: !!resumeFile,
+      cvAttached: !!cvFile,
+    };
+
+    if (onAdd) {
+      onAdd(newApplication);
+    }
+    
     toast({
-      title: "Application Added",
-      description: "Your job application has been saved successfully.",
+      title: "Application saved!",
+      description: "Your job application has been successfully added to your dashboard.",
     });
+    
     setOpen(false);
+    // Reset form
+    setJobTitle("");
+    setCompany("");
+    setJobId("");
+    setAppliedDate("");
+    setStatus("pending");
+    setDescription("");
+    setAdditionalInfo("");
+    setResumeFile(null);
+    setCvFile(null);
+  };
+
+  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setResumeFile(e.target.files[0]);
+    }
+  };
+
+  const handleCvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCvFile(e.target.files[0]);
+    }
   };
 
   return (
@@ -30,7 +98,7 @@ export const AddJobDialog = () => {
         </Button>
       </DialogTrigger>
       
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Add Job Application</DialogTitle>
         </DialogHeader>
@@ -38,20 +106,24 @@ export const AddJobDialog = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="jobTitle">Job Title</Label>
+              <Label htmlFor="jobTitle">Job Title *</Label>
               <Input 
                 id="jobTitle" 
-                placeholder="Software Engineer" 
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="e.g. Senior Frontend Developer" 
                 required 
                 className="focus:ring-primary"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="company">Company Name</Label>
+              <Label htmlFor="company">Company Name *</Label>
               <Input 
                 id="company" 
-                placeholder="Tech Corp Inc." 
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="e.g. Google" 
                 required 
                 className="focus:ring-primary"
               />
@@ -63,17 +135,20 @@ export const AddJobDialog = () => {
               <Label htmlFor="jobId">Job ID</Label>
               <Input 
                 id="jobId" 
-                placeholder="REQ-2024-001" 
-                required 
+                value={jobId}
+                onChange={(e) => setJobId(e.target.value)}
+                placeholder="e.g. REQ-2024-001" 
                 className="focus:ring-primary"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="appliedDate">Applied Date</Label>
+              <Label htmlFor="appliedDate">Applied Date *</Label>
               <Input 
                 id="appliedDate" 
                 type="date" 
+                value={appliedDate}
+                onChange={(e) => setAppliedDate(e.target.value)}
                 required 
                 className="focus:ring-primary"
               />
@@ -82,7 +157,7 @@ export const AddJobDialog = () => {
           
           <div className="space-y-2">
             <Label htmlFor="status">Application Status</Label>
-            <Select defaultValue="pending">
+            <Select value={status} onValueChange={(value: "pending" | "interview" | "rejected" | "offer") => setStatus(value)}>
               <SelectTrigger className="focus:ring-primary">
                 <SelectValue />
               </SelectTrigger>
@@ -99,9 +174,10 @@ export const AddJobDialog = () => {
             <Label htmlFor="description">Job Description</Label>
             <Textarea 
               id="description" 
-              placeholder="Brief description of the role and requirements..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Paste the job description here..."
               className="min-h-[100px] focus:ring-primary" 
-              required
             />
           </div>
           
@@ -109,21 +185,60 @@ export const AddJobDialog = () => {
             <Label htmlFor="additionalInfo">Additional Notes (Optional)</Label>
             <Textarea 
               id="additionalInfo" 
-              placeholder="Any additional information about the application..."
+              value={additionalInfo}
+              onChange={(e) => setAdditionalInfo(e.target.value)}
+              placeholder="Any additional information about this application..."
               className="focus:ring-primary"
             />
           </div>
           
-          <div className="space-y-2">
+          {/* Resume Upload */}
+          <div className="space-y-4">
             <Label>Resume Upload</Label>
-            <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center hover:border-primary transition-colors">
-              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground mb-2">
-                Drag and drop your resume or click to browse
-              </p>
-              <Button type="button" variant="outline" size="sm">
-                Choose File
-              </Button>
+            <div className="border-2 border-dashed border-border rounded-lg p-6">
+              <div className="text-center">
+                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <div className="space-y-2">
+                  <Label htmlFor="resume" className="cursor-pointer">
+                    <span className="text-sm font-medium text-primary hover:underline">
+                      {resumeFile ? resumeFile.name : 'Click to upload resume'}
+                    </span>
+                    <Input
+                      id="resume"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleResumeUpload}
+                      className="hidden"
+                    />
+                  </Label>
+                  <p className="text-xs text-muted-foreground">PDF, DOC, DOCX (max 5MB)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CV Upload */}
+          <div className="space-y-4">
+            <Label>CV Upload (Optional)</Label>
+            <div className="border-2 border-dashed border-border rounded-lg p-6">
+              <div className="text-center">
+                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <div className="space-y-2">
+                  <Label htmlFor="cv" className="cursor-pointer">
+                    <span className="text-sm font-medium text-primary hover:underline">
+                      {cvFile ? cvFile.name : 'Click to upload CV'}
+                    </span>
+                    <Input
+                      id="cv"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleCvUpload}
+                      className="hidden"
+                    />
+                  </Label>
+                  <p className="text-xs text-muted-foreground">PDF, DOC, DOCX (max 5MB)</p>
+                </div>
+              </div>
             </div>
           </div>
           
